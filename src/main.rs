@@ -1,18 +1,18 @@
 use std::{
     fs::File,
-    io::{  Read, Write, stdin, stdout},
+    io::{Read, Write, stdin, stdout},
     path::Path,
 };
 
-use rlox::errors::*;
 use rlox::scanner::Scanner;
+use rlox::errors::LoxError;
 
 fn run(source: String) -> Result<(), LoxError> {
     let mut scanner = Scanner::new(source);
     let tokens = scanner.scan_tokens();
 
-    for tok in tokens{
-        println!("{}",tok.to_string())
+    for tok in tokens {
+        println!("{}", tok.to_string())
     }
 
     Ok(())
@@ -62,3 +62,49 @@ fn main() -> Result<(), LoxError> {
 
     Ok(())
 }
+
+// fn main() {
+//     // 123
+//     let literal_123 = Box::new(Expr::Literal {
+//         value: Literal::Number(123.0),
+//     });
+
+//     // (- 123)
+//     let minus = Token::new(
+//         MINUS,
+//         "-".to_string(),
+//         Literal::Nil,
+//         0,
+//     );
+
+//     let unary = Box::new(Expr::Unary {
+//         operator: minus,
+//         right: literal_123,
+//     });
+
+//     // 45.67
+//     let literal_45_67 = Box::new(Expr::Literal {
+//         value: Literal::Number(45.67),
+//     });
+
+//     // (group 45.67)
+//     let grouping = Box::new(Expr::Grouping {
+//         expression: literal_45_67,
+//     });
+
+//     // (* (- 123) (group 45.67))
+//     let multiply = Token::new(
+//         rlox::token_type::TokenType::STAR,
+//         "*".to_string(),
+//         rlox::token::Literal::Nil,
+//         0,
+//     );
+
+//     let expr = Expr::Binary {
+//         left: unary,
+//         operator: multiply,
+//         right: grouping,
+//     };
+
+//     println!("{}", RPN(&expr));
+// }
