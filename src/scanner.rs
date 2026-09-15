@@ -94,7 +94,7 @@ impl Scanner {
         return true;
     }
 
-    fn string(&mut self) {
+    fn string(&mut self) -> Result<(), LoxError> {
         while self.peek() != b'"' && !self.is_at_end() {
             if self.peek() == b'\n' {
                 self.line += 1;
@@ -102,9 +102,7 @@ impl Scanner {
             self.advance();
         }
         if self.is_at_end() {
-            error(self.line, "Unterminated String.");
-
-            return;
+            return Err(report(self.line, "", "Unterminated String.").into());
         }
         self.advance();
 
@@ -116,6 +114,7 @@ impl Scanner {
             Literal::String(value),
             self.line,
         );
+        return Ok(());
     }
 
     fn is_digit(&self, ch: u8) -> bool {
@@ -164,7 +163,7 @@ impl Scanner {
     }
 
     /// Each run creats a single `Token` and push to `self.tokens`
-    fn scan_token(&mut self) {
+    fn scan_token(&mut self) -> Result<(), LoxError> {
         let c = self.advance();
 
         match c {
@@ -255,7 +254,7 @@ impl Scanner {
             b'\n' => self.line += 1,
 
             b'"' => {
-                self.string();
+                self.string()?;
             }
 
             b'o' => {
@@ -270,16 +269,17 @@ impl Scanner {
                 } else if self.is_alphabet(c) {
                     self.identifier();
                 } else {
-                    error(self.line, "Unexpected character!");
+                    return Err(report(self.line, "", "Unexpected character!").into());
                 }
             }
         }
+        Ok(())
     }
 
-    pub fn scan_tokens(&mut self) -> Vec<Token> {
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, LoxError> {
         while !self.is_at_end() {
             self.start = self.current;
-            self.scan_token();
+            self.scan_token()?;
         }
 
         self.tokens.push(Token::new(
@@ -289,6 +289,6 @@ impl Scanner {
             self.line,
         ));
 
-        self.tokens.clone()
+        Ok(self.tokens.clone())
     }
 }

@@ -1,5 +1,4 @@
 use crate::expression::Expr;
-use crate::token::Literal;
 use crate::token::Token;
 use crate::token_type::TokenType;
 
@@ -114,7 +113,7 @@ impl Parser {
             _ => return self.primary(),
         }
     }
-
+#[allow(dead_code)]
     fn consume(&self, tt: TokenType, message: &str) {
         todo!();
     }

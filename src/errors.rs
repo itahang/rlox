@@ -29,6 +29,11 @@ impl From<io::Error> for LoxError {
         LoxError::Io(error)
     }
 }
+impl From<ScannerError> for LoxError {
+    fn from(error: ScannerError) -> Self {
+        LoxError::Scan(error)
+    }
+}
 
 pub fn error(line: usize, message: &str) {
     report(line, &String::new(), message);
@@ -38,6 +43,9 @@ pub fn error(line: usize, message: &str) {
 }
 
 pub fn report(line: usize, location: &str, message: &str) -> ScannerError {
+    unsafe {
+        HAD_ERROR = true;
+    }
     let err = ScannerError::new(line, location.to_string(), message.to_string());
     eprintln!("[Line: {} ] Error {}:  {}", line, location, message);
     return err;

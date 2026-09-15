@@ -30,4 +30,10 @@ impl Token {
     pub fn get_lexeme_string(&self)->String{
         return self.lexeme.clone();
     }
+    pub fn get_type(&self)->TokenType{
+        return  self.tok_type;
+    }
+    pub fn get_literal(&self)->Literal{
+        return self.literal.clone();
+    }
 }
