@@ -27,7 +27,7 @@ pub fn parenthesize(expression: &Expr) -> String {
         } => {
             format!(
                 "({} {} {})",
-                operator.lexeme,
+                operator.get_lexeme_string(),
                 parenthesize(left),
                 parenthesize(right)
             )
@@ -48,7 +48,7 @@ pub fn parenthesize(expression: &Expr) -> String {
         },
 
         Expr::Unary { operator, right } => {
-            format!("({} {})", operator.lexeme, parenthesize(right))
+            format!("({} {})", operator.get_lexeme_string(), parenthesize(right))
         }
     }
 }
@@ -64,7 +64,7 @@ pub fn rpn(expression: &Expr) -> String {
                 "{} {} {}",
                 rpn(left),
                 rpn(right),
-                operator.lexeme,
+                operator.get_lexeme_string(),
             )
         }
 
@@ -83,7 +83,7 @@ pub fn rpn(expression: &Expr) -> String {
         },
 
         Expr::Unary { operator, right } => {
-            format!("{} {}",  rpn(right),operator.lexeme)
+            format!("{} {}",  rpn(right),operator.get_lexeme_string())
         }
     }
 }
