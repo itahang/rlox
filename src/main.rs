@@ -11,10 +11,14 @@ use rlox::{expression::parenthesize, scanner::Scanner};
 fn run(source: String) -> Result<(), LoxError> {
     let mut scanner = Scanner::new(source);
     let tokens = scanner.scan_tokens()?;
+    // for tok in &tokens{
+    //     println!("{:?}",tok);
+    // }
     let mut parser = Parser::new(tokens);
 
     let exp = parser.expression()?;
-    println!("{}",parenthesize(&exp)) ;
+    println!("{:?}",parenthesize(&exp)) ;
+    // println!("{:?}",exp);
 
     Ok(())
 }
