@@ -27,8 +27,8 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    fn scanner_error(&self, message: &str) -> ScannerError {
-        ScannerError::new(self.line, "".to_string(), message.to_string())
+    fn scanner_error(&self, location: &str, message: &str) -> ScannerError {
+        ScannerError::new(self.line, location.to_string(), message.to_string())
     }
 
     /// Creates a new `Scanner` from the given source code.
@@ -106,13 +106,7 @@ impl Scanner {
             self.advance();
         }
         if self.is_at_end() {
-            return Err(report(
-                self.line,
-                "",
-                "Unterminated String.",
-                self.scanner_error("Unterminated String").into(),
-            )
-            .into());
+            return Err(report(self.scanner_error("", "Unterminated String").into()).into());
         }
         self.advance();
 
@@ -279,7 +273,7 @@ impl Scanner {
                 } else if self.is_alphabet(c) {
                     self.identifier();
                 } else {
-                    return Err(report(self.line, "", "Unexpected character!").into());
+                    return Err(self.scanner_error("", "Unexpected character!").into());
                 }
             }
         }

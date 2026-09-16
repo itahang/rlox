@@ -1,4 +1,4 @@
-use crate::errors::{LoxError, ParserError};
+use crate::errors::{LoxError, ParserError, report};
 use crate::expression::Expr;
 use crate::token::Token;
 use crate::token_type::TokenType;
@@ -11,6 +11,9 @@ pub struct Parser {
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens, current: 0 }
+    }
+    fn parser_error(&self, location: &str, message: &str) -> ParserError {
+        ParserError::new(0, location.to_string(), message.to_string())
     }
     fn peek(&self) -> Token {
         self.tokens[self.current].clone()
@@ -119,7 +122,8 @@ impl Parser {
         if self.check(&tt) {
             return Ok(self.advance());
         } else {
-            return Err(LoxError::Parse(ParserError::new()));
+            let e = self.parser_error("location", "message");
+            return Err(report(e.into()));
         }
     }
 
