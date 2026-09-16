@@ -27,6 +27,10 @@ pub struct Scanner {
 }
 
 impl Scanner {
+    fn scanner_error(&self, message: &str) -> ScannerError {
+        ScannerError::new(self.line, "".to_string(), message.to_string())
+    }
+
     /// Creates a new `Scanner` from the given source code.
     pub fn new(source: String) -> Self {
         let mut kw: HashMap<String, TokenType> = HashMap::new();
@@ -102,7 +106,13 @@ impl Scanner {
             self.advance();
         }
         if self.is_at_end() {
-            return Err(report(self.line, "", "Unterminated String.").into());
+            return Err(report(
+                self.line,
+                "",
+                "Unterminated String.",
+                self.scanner_error("Unterminated String").into(),
+            )
+            .into());
         }
         self.advance();
 

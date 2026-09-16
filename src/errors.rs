@@ -1,6 +1,14 @@
-use std::io;
+use std::error::Error;
+use std::fmt;
+use std::{fmt::Display, io};
 
 pub static mut HAD_ERROR: bool = false;
+
+trait LError {
+    fn get_line(&self) -> usize;
+    fn get_location(&self) -> String;
+    fn get_message(&self) -> String;
+}
 
 #[derive(Debug)]
 #[allow(unused)]
@@ -19,10 +27,63 @@ impl ScannerError {
     }
 }
 
+impl fmt::Display for ScannerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "[Line: {}] Error {}: {}",
+            self.line, self.location, self.message
+        )
+    }
+}
+
+impl Error for ScannerError {}
+
+impl LError for ScannerError{
+    fn get_line(&self) -> usize {
+        self.line
+    }
+    fn get_location(&self) -> String {
+        self.location.clone()
+    }
+    fn get_message(&self) -> String {
+        self.message.clone()
+    }
+}
+
+#[derive(Debug)]
+pub struct ParserError {
+    line: usize,
+    location: String,
+    message: String,
+}
+impl ParserError {
+    pub fn new(line: usize, location: String, message: String) -> Self {
+        Self {
+            line,
+            location,
+            message,
+        }
+    }
+}
+
+impl fmt::Display for ParserError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "[Line: {}] Error {}: {}",
+            self.line, self.location, self.message
+        )
+    }
+}
+
+impl Error for ParserError {}
+
 #[derive(Debug)]
 pub enum LoxError {
     Io(io::Error),
     Scan(ScannerError),
+    Parse(ParserError),
 }
 impl From<io::Error> for LoxError {
     fn from(error: io::Error) -> Self {
@@ -34,19 +95,25 @@ impl From<ScannerError> for LoxError {
         LoxError::Scan(error)
     }
 }
-
-pub fn error(line: usize, message: &str) {
-    report(line, &String::new(), message);
-    unsafe {
-        HAD_ERROR = true;
+impl From<ParserError> for LoxError {
+    fn from(error: ParserError) -> Self {
+        LoxError::Parse(error)
     }
 }
 
-pub fn report(line: usize, location: &str, message: &str) -> ScannerError {
+pub fn error(line: usize, lerror: LoxError) -> LoxError {
     unsafe {
         HAD_ERROR = true;
     }
-    let err = ScannerError::new(line, location.to_string(), message.to_string());
-    eprintln!("[Line: {} ] Error {}:  {}", line, location, message);
-    return err;
+    report(line, &String::new(), lerror)
+}
+
+pub fn report(lerror: LoxError) -> LoxError {
+    unsafe {
+        HAD_ERROR = true;
+    }
+
+    eprintln!("[Line: {} ] Error {}:  {}", lerror, location,);
+
+    return lerror.into();
 }

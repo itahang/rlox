@@ -1,3 +1,4 @@
+use crate::errors::{LoxError, ParserError};
 use crate::expression::Expr;
 use crate::token::Token;
 use crate::token_type::TokenType;
@@ -41,15 +42,15 @@ impl Parser {
         return self.previous();
     }
 
-    fn expression(&mut self) -> Expr {
+    fn expression(&mut self) -> Result<Expr, LoxError> {
         return self.equality();
     }
-    fn equality(&mut self) -> Expr {
-        let mut expr = self.comparision();
+    fn equality(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.comparision()?;
         let to_match: Vec<TokenType> = vec![TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL];
         while self.match_next(&to_match) {
             let operator = self.previous();
-            let right = self.comparision();
+            let right = self.comparision()?;
             let tmp = Expr::Binary {
                 left: Box::new(expr),
                 operator,
@@ -58,11 +59,11 @@ impl Parser {
             expr = tmp;
         }
 
-        return expr;
+        return Ok(expr);
     }
 
-    fn comparision(&mut self) -> Expr {
-        let mut exp = self.term();
+    fn comparision(&mut self) -> Result<Expr, LoxError> {
+        let mut exp = self.term()?;
         let to_match: Vec<TokenType> = vec![
             TokenType::GREATER,
             TokenType::GREATER_EQUAL,
@@ -71,7 +72,7 @@ impl Parser {
         ];
         while self.match_next(&to_match) {
             let operator = self.previous();
-            let right = self.term();
+            let right = self.term()?;
             let tmp = Expr::Binary {
                 left: Box::new(exp),
                 operator,
@@ -80,15 +81,15 @@ impl Parser {
             exp = tmp;
         }
 
-        return exp;
+        return Ok(exp);
     }
 
-    fn term(&mut self) -> Expr {
-        let mut exp = self.unary();
+    fn term(&mut self) -> Result<Expr, LoxError> {
+        let mut exp = self.unary()?;
         let to_match = vec![TokenType::MINUS, TokenType::PLUS];
         while self.match_next(&to_match) {
             let operator = self.previous();
-            let right = self.unary();
+            let right = self.unary()?;
             let tmp = Expr::Binary {
                 left: Box::new(exp),
                 operator,
@@ -98,27 +99,31 @@ impl Parser {
             exp = tmp;
         }
 
-        return exp;
+        return Ok(exp);
     }
-    fn unary(&mut self) -> Expr {
+    fn unary(&mut self) -> Result<Expr, LoxError> {
         match self.peek().get_type() {
             TokenType::BANG | TokenType::MINUS => {
                 let operator = self.advance();
-                return Expr::Unary {
+                return Ok(Expr::Unary {
                     operator,
-                    right: Box::new(self.unary()),
-                };
+                    right: Box::new(self.unary()?),
+                });
             }
 
-            _ => return self.primary(),
+            _ => return Ok(self.primary()?),
         }
     }
-#[allow(dead_code)]
-    fn consume(&self, tt: TokenType, message: &str) {
-        todo!();
+
+    fn consume(&mut self, tt: TokenType, message: &str) -> Result<Token, LoxError> {
+        if self.check(&tt) {
+            return Ok(self.advance());
+        } else {
+            return Err(LoxError::Parse(ParserError::new()));
+        }
     }
 
-    fn primary(&mut self) -> Expr {
+    fn primary(&mut self) -> Result<Expr, LoxError> {
         match self.peek().get_type() {
             TokenType::FALSE
             | TokenType::TRUE
@@ -126,21 +131,21 @@ impl Parser {
             | TokenType::NUMBER
             | TokenType::STRING => {
                 let token = self.advance();
-                Expr::Literal {
+                Ok(Expr::Literal {
                     value: token.get_literal(),
-                }
+                })
             }
 
             TokenType::LEFT_PAREN => {
                 self.advance();
 
-                let exp = self.expression();
+                let exp = self.expression()?;
 
-                self.consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
+                self.consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.")?;
 
-                Expr::Grouping {
+                Ok(Expr::Grouping {
                     expression: Box::new(exp),
-                }
+                })
             }
 
             _ => {
