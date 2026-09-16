@@ -27,6 +27,10 @@ pub struct Scanner {
 }
 
 impl Scanner {
+    fn scanner_error(&self, location: &str, message: &str) -> ScannerError {
+        ScannerError::new(self.line, location.to_string(), message.to_string())
+    }
+
     /// Creates a new `Scanner` from the given source code.
     pub fn new(source: String) -> Self {
         let mut kw: HashMap<String, TokenType> = HashMap::new();
@@ -94,7 +98,7 @@ impl Scanner {
         return true;
     }
 
-    fn string(&mut self) {
+    fn string(&mut self) -> Result<(), LoxError> {
         while self.peek() != b'"' && !self.is_at_end() {
             if self.peek() == b'\n' {
                 self.line += 1;
@@ -102,9 +106,7 @@ impl Scanner {
             self.advance();
         }
         if self.is_at_end() {
-            error(self.line, "Unterminated String.");
-
-            return;
+            return Err(report(self.scanner_error("", "Unterminated String").into()).into());
         }
         self.advance();
 
@@ -116,6 +118,7 @@ impl Scanner {
             Literal::String(value),
             self.line,
         );
+        return Ok(());
     }
 
     fn is_digit(&self, ch: u8) -> bool {
@@ -164,82 +167,98 @@ impl Scanner {
     }
 
     /// Each run creats a single `Token` and push to `self.tokens`
-    fn scan_token(&mut self) {
+    fn scan_token(&mut self) -> Result<(), LoxError> {
         let c = self.advance();
 
         match c {
             b'(' => self.add_token(
                 TokenType::LEFT_PAREN,
-                "".to_string(),
+                "(".to_string(),
                 Literal::Nil,
                 self.line,
             ),
             b')' => self.add_token(
                 TokenType::RIGHT_PAREN,
-                "".to_string(),
+                ")".to_string(),
                 Literal::Nil,
                 self.line,
             ),
             b'{' => self.add_token(
                 TokenType::LEFT_BRACE,
-                "".to_string(),
+                "{".to_string(),
                 Literal::Nil,
                 self.line,
             ),
             b'}' => self.add_token(
                 TokenType::RIGHT_BRACE,
-                "".to_string(),
+                "}".to_string(),
                 Literal::Nil,
                 self.line,
             ),
-            b',' => self.add_token(TokenType::COMMA, "".to_string(), Literal::Nil, self.line),
-            b'.' => self.add_token(TokenType::DOT, "".to_string(), Literal::Nil, self.line),
-            b'-' => self.add_token(TokenType::MINUS, "".to_string(), Literal::Nil, self.line),
-            b'+' => self.add_token(TokenType::PLUS, "".to_string(), Literal::Nil, self.line),
+            b',' => self.add_token(TokenType::COMMA, ",".to_string(), Literal::Nil, self.line),
+            b'.' => self.add_token(TokenType::DOT, ".".to_string(), Literal::Nil, self.line),
+            b'-' => self.add_token(TokenType::MINUS, "-".to_string(), Literal::Nil, self.line),
+            b'+' => self.add_token(TokenType::PLUS, "+".to_string(), Literal::Nil, self.line),
             b';' => self.add_token(
                 TokenType::SEMICOLON,
-                "".to_string(),
+                ";".to_string(),
                 Literal::Nil,
                 self.line,
             ),
-            b'*' => self.add_token(TokenType::STAR, "".to_string(), Literal::Nil, self.line),
+            b'*' => self.add_token(TokenType::STAR, "*".to_string(), Literal::Nil, self.line),
 
             b'!' => {
-                let token_type = if self.match_next(b'=') {
-                    TokenType::BANG_EQUAL
+                if self.match_next(b'=') {
+                    self.add_token(
+                        TokenType::BANG_EQUAL,
+                        "!=".to_string(),
+                        Literal::Nil,
+                        self.line,
+                    );
                 } else {
-                    TokenType::BANG
+                    self.add_token(TokenType::BANG, "!".to_string(), Literal::Nil, self.line);
                 };
-                self.add_token(token_type, "".to_string(), Literal::Nil, self.line);
             }
 
             b'=' => {
-                let token_type = if self.match_next(b'=') {
-                    TokenType::EQUAL_EQUAL
+                if self.match_next(b'=') {
+                    self.add_token(
+                        TokenType::EQUAL_EQUAL,
+                        "==".to_string(),
+                        Literal::Nil,
+                        self.line,
+                    )
                 } else {
-                    TokenType::EQUAL
+                    self.add_token(TokenType::EQUAL, "=".to_string(), Literal::Nil, self.line)
                 };
-                self.add_token(token_type, "".to_string(), Literal::Nil, self.line)
             }
 
             b'<' => {
-                let token_type = if self.match_next(b'=') {
-                    TokenType::LESS_EQUAL
+                if self.match_next(b'=') {
+                    self.add_token(
+                        TokenType::LESS_EQUAL,
+                        "<=".to_string(),
+                        Literal::Nil,
+                        self.line,
+                    )
                 } else {
-                    TokenType::LESS
+                    self.add_token(TokenType::LESS, "<".to_string(), Literal::Nil, self.line)
                 };
-                self.add_token(token_type, "".to_string(), Literal::Nil, self.line)
             }
 
             b'>' => {
-                let token_type = if self.match_next(b'=') {
-                    TokenType::GREATER_EQUAL
+                if self.match_next(b'=') {
+                    self.add_token(
+                        TokenType::GREATER_EQUAL,
+                        ">=".to_string(),
+                        Literal::Nil,
+                        self.line,
+                    )
                 } else {
-                    TokenType::GREATER
+                    self.add_token(TokenType::GREATER, ">".to_string(), Literal::Nil, self.line)
                 };
 
-                self.add_token(token_type, "".to_string(), Literal::Nil, self.line)
-            }
+             }
 
             b'/' => {
                 if self.match_next(b'/') {
@@ -247,7 +266,7 @@ impl Scanner {
                         self.advance();
                     }
                 } else {
-                    self.add_token(TokenType::SLASH, "".to_string(), Literal::Nil, self.line);
+                    self.add_token(TokenType::SLASH, "/".to_string(), Literal::Nil, self.line);
                 }
             }
             b' ' | b'\r' | b'\t' => {}
@@ -255,14 +274,14 @@ impl Scanner {
             b'\n' => self.line += 1,
 
             b'"' => {
-                self.string();
+                self.string()?;
             }
 
-            b'o' => {
-                if self.match_next(b'r') {
-                    self.add_token(TokenType::OR, "".to_string(), Literal::Nil, self.line);
-                }
-            }
+            // b'o' => {
+            //     if self.match_next(b'r') {
+            //         self.add_token(TokenType::OR, "or".to_string(), Literal::Nil, self.line);
+            //     }
+            // }
 
             _ => {
                 if self.is_digit(c) {
@@ -270,16 +289,17 @@ impl Scanner {
                 } else if self.is_alphabet(c) {
                     self.identifier();
                 } else {
-                    error(self.line, "Unexpected character!");
+                    return Err(self.scanner_error("", "Unexpected character!").into());
                 }
             }
         }
+        Ok(())
     }
 
-    pub fn scan_tokens(&mut self) -> Vec<Token> {
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, LoxError> {
         while !self.is_at_end() {
             self.start = self.current;
-            self.scan_token();
+            self.scan_token()?;
         }
 
         self.tokens.push(Token::new(
@@ -289,6 +309,6 @@ impl Scanner {
             self.line,
         ));
 
-        self.tokens.clone()
+        Ok(self.tokens.clone())
     }
 }

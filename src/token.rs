@@ -8,7 +8,7 @@ pub enum Literal {
     Nil,
 }
 #[allow(unused)]
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Token {
     tok_type: TokenType,
     lexeme: String,
@@ -26,5 +26,17 @@ impl Token {
     }
     pub fn to_string(&self) -> String {
         return format!("{:?} {} {:?}", self.tok_type, self.lexeme, self.literal);
+    }
+    pub fn get_lexeme_string(&self)->String{
+        return self.lexeme.clone();
+    }
+    pub fn get_type(&self)->TokenType{
+        return  self.tok_type;
+    }
+    pub fn get_literal(&self)->Literal{
+        return self.literal.clone();
+    }
+    pub fn get_line(&self)->usize{
+        self.line
     }
 }

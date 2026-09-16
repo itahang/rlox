@@ -1,9 +1,7 @@
 use std::io;
-
-pub static mut HAD_ERROR: bool = false;
-
-#[derive(Debug)]
-#[allow(unused)]
+use thiserror::Error;
+#[derive(Debug, Error)]
+#[error("[line {line} {location}: {message}]")]
 pub struct ScannerError {
     line: usize,
     location: String,
@@ -19,26 +17,39 @@ impl ScannerError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
+#[error("[line {line} {location}: {message}]")]
+pub struct ParserError {
+    line: usize,
+    location: String,
+    message: String,
+}
+impl ParserError {
+    pub fn new(line: usize, location: String, message: String) -> Self {
+        Self {
+            line,
+            location,
+            message,
+        }
+    }
+}
+
+#[derive(Debug, Error)]
 pub enum LoxError {
-    Io(io::Error),
-    Scan(ScannerError),
-}
-impl From<io::Error> for LoxError {
-    fn from(error: io::Error) -> Self {
-        LoxError::Io(error)
-    }
-}
-
-pub fn error(line: usize, message: &str) {
-    report(line, &String::new(), message);
-    unsafe {
-        HAD_ERROR = true;
-    }
+    #[error("IO ERROR: {0}")]
+    Io(#[from] io::Error),
+    #[error("Scanner Error: {0}")]
+    Scan(#[from] ScannerError),
+    #[error("Parser Error: {0}")]
+    Parse(#[from] ParserError),
 }
 
-pub fn report(line: usize, location: &str, message: &str) -> ScannerError {
-    let err = ScannerError::new(line, location.to_string(), message.to_string());
-    eprintln!("[Line: {} ] Error {}:  {}", line, location, message);
-    return err;
+pub fn report_err(line: usize, wher: &str, message: &str) {
+    eprintln!("[line {} ] {} : {}", line, wher, message);
+}
+
+pub fn report(lerror: LoxError) -> LoxError {
+    eprintln!("{:?}", lerror);
+
+    return lerror;
 }
