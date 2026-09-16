@@ -4,17 +4,17 @@ use std::{
     path::Path,
 };
 
-use rlox::scanner::Scanner;
 use rlox::errors::LoxError;
 use rlox::parser::Parser;
+use rlox::{expression::parenthesize, scanner::Scanner};
 
 fn run(source: String) -> Result<(), LoxError> {
     let mut scanner = Scanner::new(source);
     let tokens = scanner.scan_tokens()?;
     let mut parser = Parser::new(tokens);
-    
-    let exp =parser.expression()?;
-    eprintln!("{:?}",exp);
+
+    let exp = parser.expression()?;
+    println!("{}",parenthesize(&exp)) ;
 
     Ok(())
 }
@@ -27,7 +27,6 @@ fn run_file(path: &Path) -> Result<(), LoxError> {
 
     Ok(())
 }
-
 
 fn run_prompt() -> Result<(), LoxError> {
     loop {
@@ -51,7 +50,6 @@ fn run_prompt() -> Result<(), LoxError> {
 
     Ok(())
 }
-
 
 fn main() -> Result<(), LoxError> {
     let args: Vec<String> = std::env::args().collect();

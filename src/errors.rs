@@ -1,8 +1,5 @@
 use std::io;
 use thiserror::Error;
-
-use crate::{token::Token, token_type::TokenType};
-
 #[derive(Debug, Error)]
 #[error("[line {line} {location}: {message}]")]
 pub struct ScannerError {

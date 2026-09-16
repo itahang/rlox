@@ -1,4 +1,3 @@
-
 use crate::errors::{LoxError, ParserError};
 use crate::expression::Expr;
 use crate::token::Token;
@@ -12,6 +11,10 @@ pub struct Parser {
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens, current: 0 }
+    }
+
+    pub fn parse(&mut self)->Result<Expr,LoxError>{
+        return self.expression();
     }
     fn parser_error(&self, token: &Token, message: &str) -> ParserError {
         if token.get_type() == TokenType::EOF {
@@ -161,7 +164,32 @@ impl Parser {
                 })
             }
 
-            _ => Err(self.parser_error(&self.peek(), "incorrect Parse").into()),
+            _ => Err(self.parser_error(&self.peek(), "Expect expression.").into()),
+        }
+    }
+    fn synchronize(&mut self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            if self.previous().get_type() == TokenType::SEMICOLON {
+                return;
+            };
+
+            match self.peek().get_type() {
+                TokenType::CLASS
+                | TokenType::FUN
+                | TokenType::VAR
+                | TokenType::FOR
+                | TokenType::IF
+                | TokenType::WHILE
+                | TokenType::PRINT
+                | TokenType::RETURN => {
+                    return;
+                }
+                _ => {
+                    self.advance();
+                }
+            }
         }
     }
 }
