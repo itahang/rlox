@@ -1,5 +1,5 @@
 use crate::token::{Literal, Token};
-
+#[derive(Debug)]
 pub enum Expr {
     Binary {
         left: Box<Expr>,

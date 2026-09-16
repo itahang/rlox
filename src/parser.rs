@@ -1,4 +1,5 @@
-use crate::errors::{LoxError, ParserError, report};
+
+use crate::errors::{LoxError, ParserError};
 use crate::expression::Expr;
 use crate::token::Token;
 use crate::token_type::TokenType;
@@ -12,9 +13,18 @@ impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens, current: 0 }
     }
-    fn parser_error(&self, location: &str, message: &str) -> ParserError {
-        ParserError::new(0, location.to_string(), message.to_string())
+    fn parser_error(&self, token: &Token, message: &str) -> ParserError {
+        if token.get_type() == TokenType::EOF {
+            ParserError::new(token.get_line(), "at end".to_string(), message.to_string())
+        } else {
+            ParserError::new(
+                token.get_line(),
+                format!("at '{}'", token.get_lexeme_string()),
+                message.to_string(),
+            )
+        }
     }
+
     fn peek(&self) -> Token {
         self.tokens[self.current].clone()
     }
@@ -45,7 +55,7 @@ impl Parser {
         return self.previous();
     }
 
-    fn expression(&mut self) -> Result<Expr, LoxError> {
+    pub fn expression(&mut self) -> Result<Expr, LoxError> {
         return self.equality();
     }
     fn equality(&mut self) -> Result<Expr, LoxError> {
@@ -120,10 +130,9 @@ impl Parser {
 
     fn consume(&mut self, tt: TokenType, message: &str) -> Result<Token, LoxError> {
         if self.check(&tt) {
-            return Ok(self.advance());
+            Ok(self.advance())
         } else {
-            let e = self.parser_error("location", "message");
-            return Err(report(e.into()));
+            Err(self.parser_error(&self.peek(), message).into())
         }
     }
 
@@ -152,9 +161,7 @@ impl Parser {
                 })
             }
 
-            _ => {
-                panic!("ERROR")
-            }
+            _ => Err(self.parser_error(&self.peek(), "incorrect Parse").into()),
         }
     }
 }

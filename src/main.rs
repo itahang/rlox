@@ -6,14 +6,15 @@ use std::{
 
 use rlox::scanner::Scanner;
 use rlox::errors::LoxError;
+use rlox::parser::Parser;
 
 fn run(source: String) -> Result<(), LoxError> {
     let mut scanner = Scanner::new(source);
     let tokens = scanner.scan_tokens()?;
-
-    for tok in tokens {
-        println!("{}", tok.to_string())
-    }
+    let mut parser = Parser::new(tokens);
+    
+    let exp =parser.expression()?;
+    eprintln!("{:?}",exp);
 
     Ok(())
 }
@@ -27,6 +28,7 @@ fn run_file(path: &Path) -> Result<(), LoxError> {
     Ok(())
 }
 
+
 fn run_prompt() -> Result<(), LoxError> {
     loop {
         print!("> ");
@@ -37,15 +39,19 @@ fn run_prompt() -> Result<(), LoxError> {
         if stdin().read_line(&mut line)? == 0 {
             break;
         }
+
         if line.trim() == ".exit" {
             break;
         }
 
-        run(line)?;
+        if let Err(error) = run(line) {
+            eprintln!("{error}");
+        }
     }
 
     Ok(())
 }
+
 
 fn main() -> Result<(), LoxError> {
     let args: Vec<String> = std::env::args().collect();

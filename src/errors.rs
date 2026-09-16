@@ -1,8 +1,10 @@
 use std::io;
 use thiserror::Error;
 
+use crate::{token::Token, token_type::TokenType};
+
 #[derive(Debug, Error)]
-#[error("[line{line} {location}: {message}]")]
+#[error("[line {line} {location}: {message}]")]
 pub struct ScannerError {
     line: usize,
     location: String,
@@ -19,7 +21,7 @@ impl ScannerError {
 }
 
 #[derive(Debug, Error)]
-#[error("[line{line} {location}: {message}]")]
+#[error("[line {line} {location}: {message}]")]
 pub struct ParserError {
     line: usize,
     location: String,
@@ -43,6 +45,10 @@ pub enum LoxError {
     Scan(#[from] ScannerError),
     #[error("Parser Error: {0}")]
     Parse(#[from] ParserError),
+}
+
+pub fn report_err(line: usize, wher: &str, message: &str) {
+    eprintln!("[line {} ] {} : {}", line, wher, message);
 }
 
 pub fn report(lerror: LoxError) -> LoxError {

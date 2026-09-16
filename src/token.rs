@@ -36,4 +36,7 @@ impl Token {
     pub fn get_literal(&self)->Literal{
         return self.literal.clone();
     }
+    pub fn get_line(&self)->usize{
+        self.line
+    }
 }
